@@ -1,3 +1,4 @@
+--Selection all backups for today
 SELECT 
 CONVERT(CHAR(100), SERVERPROPERTY('Servername')) AS Server, 
 msdb.dbo.backupset.database_name, 
