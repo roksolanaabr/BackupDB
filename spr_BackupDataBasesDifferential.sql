@@ -23,17 +23,28 @@ AS BEGIN
 	BEGIN TRY
 
 		DECLARE @fileName NVARCHAR(250),
+		@dataBaseName NVARCHAR(250),
 		@path NVARCHAR (250),
 		@fileDate NVARCHAR(20)
 		SELECT @fileDate = CONVERT(NVARCHAR(20),GETDATE(),112)
 		SET @path = 'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Backup\'
+		DECLARE db_cursor CURSOR FOR
+		SELECT name
+		FROM MASTER.dbo.sysdatabases
+		WHERE name NOT IN ('master','model','msdb','tempdb')
+		OPEN db_cursor
+		FETCH NEXT FROM db_cursor INTO @dataBaseName
+		WHILE @@FETCH_STATUS = 0
 		BEGIN
 
-			SET @fileName = @path + @dataBase + '_' + @fileDate + '.BAK'
-			BACKUP DATABASE @dataBase TO DISK = @fileName
+			SET @fileName = @path + @dataBaseName + '_' + @fileDate + '.BAK'
+			BACKUP DATABASE @dataBaseName TO DISK = @fileName
 			WITH DIFFERENTIAL,
 			NAME = N'DIFFERENTIAL Databases Backup'
+			FETCH NEXT FROM db_cursor INTO @dataBaseName
 		END
+		CLOSE db_cursor
+		DEALLOCATE db_cursor
 	END TRY
 	BEGIN CATCH
 		DECLARE @ErrorMessage NVARCHAR(4000)
@@ -44,4 +55,3 @@ END
 GO
 
 
-EXEC [dbo].[spr_backupDataBasesDIFFERENTIAL] 'Shop LV-608.db'
