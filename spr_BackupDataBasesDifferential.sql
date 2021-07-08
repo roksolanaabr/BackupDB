@@ -8,8 +8,6 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 -- Verify that the stored procedure does not exist. 
-DROP PROCEDURE IF EXISTS [dbo].[spr_backupDataBasesDIFFERENTIAL] -- one way
-GO
 
 IF OBJECT_ID ( N'[dbo].[spr_backupDataBasesDIFFERENTIAL]', N'P' ) IS NOT NULL   -- another way
     DROP PROCEDURE [dbo].[spr_backupDataBasesDIFFERENTIAL];  
@@ -18,16 +16,21 @@ GO
 -- Create a stored procedure that backup dataBases
 CREATE PROCEDURE [dbo].[spr_backupDataBasesDIFFERENTIAL] (@dataBase NVARCHAR(250))
 AS BEGIN
+	EXEC spr_LogProcess'[dbo].[spr_backupDataBasesFULL]', 'start', ' '
 	SET NOCOUNT ON
 
 	BEGIN TRY
 
-		DECLARE @fileName NVARCHAR(250),
-		@dataBaseName NVARCHAR(250),
-		@path NVARCHAR (250),
-		@fileDate NVARCHAR(20)
+		DECLARE @fileName NVARCHAR(250)
+		DECLARE @dataBaseName NVARCHAR(250)
+		DECLARE @path NVARCHAR (250)
+		DECLARE @fileDate NVARCHAR(20)
+		DECLARE @ErrorMessage NVARCHAR(4000)
+		
+		
 		SELECT @fileDate = CONVERT(NVARCHAR(20),GETDATE(),112)
 		SET @path = 'C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Backup\'
+		
 		DECLARE db_cursor CURSOR FOR
 		SELECT name
 		FROM MASTER.dbo.sysdatabases
@@ -47,10 +50,11 @@ AS BEGIN
 		DEALLOCATE db_cursor
 	END TRY
 	BEGIN CATCH
-		DECLARE @ErrorMessage NVARCHAR(4000)
 		SELECT 
         @ErrorMessage = ERROR_MESSAGE()
+	EXEC spr_LogProcess '[dbo].[spr_backupDataBasesFULL]', 'fatal', ' '
 	END CATCH
+	EXEC spr_LogProcess '[dbo].[spr_backupDataBasesFULL]', 'stop',' ' 
 END
 GO
 
